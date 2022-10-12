@@ -30,127 +30,53 @@ UPDATES    : https://github.com/makomi/email-signature-generator
 import os, shutil, errno
 from configparser import ConfigParser, ExtendedInterpolation
 from string import Template
+import requests
+import pandas as pd
+from bs4 import BeautifulSoup
 
-outputFolder    = "output"
-releaseFolder   = "" # e.g. "in use"
-fileData        = "data.cfg"
-fileTemplateSig = "signature.template.html"
-
-# -----------------------------------------------------------------------------
-# helper functions
-
-# access configuration
-def ConfigSectionMap(section):
-    dict1={}
-    options = cfg.options(section)
-    for option in options:
-        try:
-            dict1[option] = cfg[section][option]
-            if dict1[option] == -1:
-                DebugPrint("skip: %s" % option)
-        except:
-            # not part of the template
-            print("exception on '%s!'" % option)
-            dict1[option] = None
-    return dict1
-
-# create a directory
-def mkdir(path):
-    try:
-        os.makedirs(path)
-    except OSError:
-        if not os.path.isdir(path):
-            raise
+outputFolder    = "C:/Users/ManonLeijser/Python handtekening automatiseren/email-signature-generator/output"
+releaseFolder   = "" # e.g. "in use
+fileData        = "C:/Users/ManonLeijser/Python handtekening automatiseren/email-signature-generator/data.cfg"
+fileTemplateSig = "C:/Users/ManonLeijser/Python handtekening automatiseren/email-signature-generator/signature.template.html"
+websitePage = "https://kpisolutions.nl/over-kpi-solutions/"
+bannerPage = "https://kpisolutions.nl/webinars/"
+resultImages = requests.get(websitePage)
+resultWebinars = requests.get(bannerPage)
 
 # -----------------------------------------------------------------------------
 
-# set up output folder
-if not os.path.isdir(outputFolder):
-    mkdir(outputFolder)
-else:
-    # else: delete all files (old signatures) in output directory
-    for content in os.listdir(outputFolder):
-        path = os.path.join(outputFolder, content)
-        try:
-            if os.path.isfile(path):
-                os.unlink(path)
-            #elif os.path.isdir(path): shutil.rmtree(path)
-        except:
-            print("exception on '%s'!" % path)
+# get photos from kpi page
+# parse page into BeautifulSoup object
+if resultImages.status_code == 200:
+    soupImages = BeautifulSoup(resultImages.content, "html.parser")
 
+# find photo objects
+images = soupImages.find_all('div',{'class':'elementor-cta__bg elementor-bg'})
 
-# create folder for the files that are in use
-if releaseFolder != "" and not os.path.isdir(releaseFolder):
-    mkdir(releaseFolder)
+# for every image in the data file, write the data file away
+for image in images:
+    image = str(image)
+    html = soupImages.contents
+    # with open("output1.html", "w") as file:
+    result = open("image.html", "w")
+    result.write(image)
 
 # -----------------------------------------------------------------------------
 
-# read in template file and data file
-fpTemplate = open(fileTemplateSig)
-src = Template(fpTemplate.read())
+# get webinars from kpi page
+if resultWebinars.status_code == 200:
+    soupWebinars = BeautifulSoup(resultWebinars.content, "html.parser")
 
-cfg = ConfigParser(interpolation=ExtendedInterpolation(), allow_no_value=True)
-cfg.read(fileData)
+# find webinar objects
+webinars = soupWebinars.find_all('div',{'class':'elementor-cta'})
 
+for webinar in webinars:
+    webinar = str(webinar)
+    html = soupWebinars.contents
+    result = open("webinar.html", "w")
+    result.write(webinar)
 
-# for every person in the data file
-for person in cfg.sections():
-    if ConfigSectionMap(person)["type"] == "person":
-        # read its data
-        first_name   = ConfigSectionMap(person)["first_name"]
-        last_name    = ConfigSectionMap(person)['last_name']
-        department   = ConfigSectionMap(person)['department']
-        tel_base     = ConfigSectionMap(person)['tel_base']
-        tel_generic  = ConfigSectionMap(person)['tel_generic']
-        tel          = ConfigSectionMap(person)['tel']
-        mobile       = ConfigSectionMap(person)['mobile']
-        fax          = ConfigSectionMap(person)['fax']
-        email        = ConfigSectionMap(person)['email']
-        url          = ConfigSectionMap(person)['url']
-        company_full = ConfigSectionMap(person)['company_full']
-        street       = ConfigSectionMap(person)['street']
-        zip_code     = ConfigSectionMap(person)['zip_code']
-        city         = ConfigSectionMap(person)['city']
-        state        = ConfigSectionMap(person)['state']
-        managers     = ConfigSectionMap(person)['managers']
-        local_court  = ConfigSectionMap(person)['local_court']
-        # FIXME: dirty hack
-        # this field is optional
-        try:
-            more_text    = ConfigSectionMap(person)['more_text']
-        except:
-            pass
-
-        # assemble dataset for signature
-        d = {
-                'first_name':first_name,
-                'last_name':last_name,
-                'department':department,
-                'tel_base':tel_base,
-                'tel_generic':tel_generic,
-                'tel':tel,
-                'mobile':mobile,
-                'fax':fax,
-                'email':email,
-                'url':url,
-                'company_full':company_full,
-                'street':street,
-                'zip_code':zip_code,
-                'city':city,
-                'state':state,
-                'managers':managers,
-                'local_court':local_court,
-                'more_text':more_text
-            }
-
-        # substitute variables in template, save as result
-        result = src.substitute(d)
-
-        # write result to a file named like the current section 
-        fpResult = open(outputFolder + "/" + person +".html", 'w')
-        fpResult.write(result)
-        fpResult.close()
-
+# -----------------------------------------------------------------------------
 
 # let user read the script's output
-#input("Everything done!\n\nPlease, check the files for errors ... ")
+input("Finished!")
