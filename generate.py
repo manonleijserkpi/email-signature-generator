@@ -52,14 +52,17 @@ if resultImages.status_code == 200:
 
 # find photo objects
 images = soupImages.find_all('div',{'class':'elementor-cta__bg elementor-bg'})
+numberImages = 1
 
 # for every image in the data file, write the data file away
 for image in images:
     image = str(image)
+    numberImages = str(numberImages)
     html = soupImages.contents
-    # with open("output1.html", "w") as file:
-    result = open("image.html", "w")
+    result = open("image" + numberImages + ".html", "w")
     result.write(image)
+    numberImages = int(numberImages)
+    numberImages += 1
 
 # -----------------------------------------------------------------------------
 
@@ -69,12 +72,16 @@ if resultWebinars.status_code == 200:
 
 # find webinar objects
 webinars = soupWebinars.find_all('div',{'class':'elementor-cta'})
+numberWebinars = 1
 
 for webinar in webinars:
     webinar = str(webinar)
+    numberWebinars = str(numberWebinars)
     html = soupWebinars.contents
-    result = open("webinar.html", "w")
+    result = open("webinar" + numberWebinars +  ".html", "w")
     result.write(webinar)
+    numberWebinars = int(numberWebinars)
+    numberWebinars += 1
 
 # -----------------------------------------------------------------------------
 
