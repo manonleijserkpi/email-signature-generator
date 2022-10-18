@@ -34,10 +34,10 @@ import requests
 import pandas as pd
 from bs4 import BeautifulSoup
 
-outputFolder    = "C:/Users/ManonLeijser/Python handtekening automatiseren/email-signature-generator/output"
+outputFolder    = r"C:\Users\ManonLeijser\Python handtekening automatiseren Manon\email-signature-generator\output"
 releaseFolder   = "" # e.g. "in use
-fileData        = "C:/Users/ManonLeijser/Python handtekening automatiseren/email-signature-generator/data.cfg"
-fileTemplateSig = "C:/Users/ManonLeijser/Python handtekening automatiseren/email-signature-generator/signature.template.html"
+fileData        = r"C:\Users\ManonLeijser\Python handtekening automatiseren Manon\data.cfg"
+fileTemplateSig = r"C:\Users\ManonLeijser\Python handtekening automatiseren Manon\setup.html"
 websitePage = "https://kpisolutions.nl/over-kpi-solutions/"
 bannerPage = "https://kpisolutions.nl/webinars/"
 resultImages = requests.get(websitePage)
@@ -82,6 +82,87 @@ for webinar in webinars:
     result.write(webinar)
     numberWebinars = int(numberWebinars)
     numberWebinars += 1
+
+# -----------------------------------------------------------------------------
+
+# access configuration
+def ConfigSectionMap(section):
+    dict1={}
+    options = cfg.options(section)
+    for option in options:
+        try:
+            dict1[option] = cfg[section][option]
+            if dict1[option] == -1:
+                DebugPrint("skip: %s" % option)
+        except:
+            # not part of the template
+            print("exception on '%s!'" % option)
+            dict1[option] = None
+    return dict1
+
+# create a directory
+def mkdir(path):
+    try:
+        os.makedirs(path)
+    except OSError:
+        if not os.path.isdir(path):
+            raise
+
+# set up output folder
+if not os.path.isdir(outputFolder):
+    mkdir(outputFolder)
+else:
+    # else: delete all files (old signatures) in output directory
+    for content in os.listdir(outputFolder):
+        path = os.path.join(outputFolder, content)
+        try:
+            if os.path.isfile(path):
+                os.unlink(path)
+            #elif os.path.isdir(path): shutil.rmtree(path)
+        except:
+            print("exception on '%s'!" % path)
+
+
+# create folder for the files that are in use
+if releaseFolder != "" and not os.path.isdir(releaseFolder):
+    mkdir(releaseFolder)
+# read in template and data file
+fpTemplate = open(r"C:\Users\ManonLeijser\Python handtekening automatiseren Manon\hubspotSignature.html")
+src = Template(fpTemplate.read())
+
+cfg = ConfigParser(interpolation=ExtendedInterpolation(), allow_no_value=True)
+cfg.read(r"C:\Users\ManonLeijser\Python handtekening automatiseren Manon\data.cfg")
+
+# for every person in the data file
+for person in cfg.sections():
+    photo = ConfigSectionMap(person)["photo"]
+    first_name =  ConfigSectionMap(person)["first_name"]
+    last_name =  ConfigSectionMap(person)["last_name"]
+    function =  ConfigSectionMap(person)["function"]
+    team =  ConfigSectionMap(person)["team"]
+    custom =  ConfigSectionMap(person)["custom"]
+    mobile =  ConfigSectionMap(person)["mobile"]
+    email =  ConfigSectionMap(person)["email"]
+
+    # assemble dataset for signature
+    d = {
+        'photo':photo,
+        'first_name':first_name,
+        'last_name':last_name,
+        'function':function,
+        'team':team,
+        'custom':custom,
+        'mobile':mobile,
+        'email':email
+    }
+
+    # substitute variables in template, save as result
+    result = src.substitute(d)
+
+    #write result to a file named like the current section
+    fpResult = open(outputFolder + "/" + person + ".html", 'w')
+    fpResult.write(result)
+    fpResult.close()
 
 # -----------------------------------------------------------------------------
 
