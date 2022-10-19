@@ -45,46 +45,6 @@ resultWebinars = requests.get(bannerPage)
 
 # -----------------------------------------------------------------------------
 
-# get photos from kpi page
-# parse page into BeautifulSoup object
-if resultImages.status_code == 200:
-    soupImages = BeautifulSoup(resultImages.content, "html.parser")
-
-# find photo objects
-images = soupImages.find_all('div',{'class':'elementor-cta__bg elementor-bg'})
-numberImages = 1
-
-# for every image in the data file, write the data file away
-for image in images:
-    image = str(image)
-    numberImages = str(numberImages)
-    html = soupImages.contents
-    result = open("image" + numberImages + ".html", "w")
-    result.write(image)
-    numberImages = int(numberImages)
-    numberImages += 1
-
-# -----------------------------------------------------------------------------
-
-# get webinars from kpi page
-if resultWebinars.status_code == 200:
-    soupWebinars = BeautifulSoup(resultWebinars.content, "html.parser")
-
-# find webinar objects
-webinars = soupWebinars.find_all('div',{'class':'elementor-cta'})
-numberWebinars = 1
-
-for webinar in webinars:
-    webinar = str(webinar)
-    numberWebinars = str(numberWebinars)
-    html = soupWebinars.contents
-    result = open("webinar" + numberWebinars +  ".html", "w")
-    result.write(webinar)
-    numberWebinars = int(numberWebinars)
-    numberWebinars += 1
-
-# -----------------------------------------------------------------------------
-
 # access configuration
 def ConfigSectionMap(section):
     dict1={}
@@ -127,7 +87,7 @@ else:
 if releaseFolder != "" and not os.path.isdir(releaseFolder):
     mkdir(releaseFolder)
 # read in template and data file
-fpTemplate = open(r"C:\Users\ManonLeijser\Python handtekening automatiseren Manon\hubspotSignature.html")
+fpTemplate = open(r"C:\Users\ManonLeijser\Python handtekening automatiseren Manon\kpiSignature.html")
 src = Template(fpTemplate.read())
 
 cfg = ConfigParser(interpolation=ExtendedInterpolation(), allow_no_value=True)
@@ -136,24 +96,20 @@ cfg.read(r"C:\Users\ManonLeijser\Python handtekening automatiseren Manon\data.cf
 # for every person in the data file
 for person in cfg.sections():
     photo = ConfigSectionMap(person)["photo"]
-    first_name =  ConfigSectionMap(person)["first_name"]
-    last_name =  ConfigSectionMap(person)["last_name"]
+    name =  ConfigSectionMap(person)["name"]
     function =  ConfigSectionMap(person)["function"]
-    team =  ConfigSectionMap(person)["team"]
-    custom =  ConfigSectionMap(person)["custom"]
     mobile =  ConfigSectionMap(person)["mobile"]
     email =  ConfigSectionMap(person)["email"]
+    banner = "https://bi4vastgoed.nl/handtekening/Banner.jpg"
 
     # assemble dataset for signature
     d = {
         'photo':photo,
-        'first_name':first_name,
-        'last_name':last_name,
+        'name':name,
         'function':function,
-        'team':team,
-        'custom':custom,
         'mobile':mobile,
-        'email':email
+        'email':email,
+        'banner':banner
     }
 
     # substitute variables in template, save as result
